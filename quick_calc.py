@@ -33,94 +33,49 @@ class CalculatorGUI(tk.Tk):
         self.var_b = tk.StringVar()
         self.var_result = tk.StringVar(value="Result: -")
 
-        # Apply dark mode styling (ONLY addition requested)
-        self._apply_dark_mode()
+        # Theme state
+        self.is_dark = tk.BooleanVar(value=True)
 
+        # Build UI first (so toggle exists), then apply theme
         self._build_ui()
-
-    def _apply_dark_mode(self):
-        # --- Dark palette ---
-        self.bg = "#121212"
-        self.fg = "#EAEAEA"
-        self.entry_bg = "#1E1E1E"
-        self.entry_fg = "#FFFFFF"
-        self.btn_bg = "#2A2A2A"
-        self.btn_fg = "#FFFFFF"
-        self.border = "#3A3A3A"
-        self.active_bg = "#3B3B3B"
-
-        # Set root background
-        self.configure(bg=self.bg)
-
-        # ttk style overrides
-        style = ttk.Style(self)
-
-        # Pick a theme that is easy to override
-        # 'clam' works well across platforms
-        try:
-            style.theme_use("clam")
-        except tk.TclError:
-            pass
-
-        # Base styles
-        style.configure(".", background=self.bg, foreground=self.fg)
-
-        style.configure("TFrame", background=self.bg)
-
-        style.configure("TLabel", background=self.bg, foreground=self.fg)
-
-        style.configure(
-            "TButton",
-            background=self.btn_bg,
-            foreground=self.btn_fg,
-            bordercolor=self.border,
-            focusthickness=2,
-            focuscolor=self.border,
-            padding=6,
-        )
-        style.map(
-            "TButton",
-            background=[("active", self.active_bg), ("pressed", self.active_bg)],
-            foreground=[("disabled", "#888888")],
-        )
-
-        style.configure(
-            "TEntry",
-            fieldbackground=self.entry_bg,
-            background=self.entry_bg,
-            foreground=self.entry_fg,
-            bordercolor=self.border,
-            insertcolor=self.entry_fg,
-        )
-
-        # Make messageboxes less jarring by setting a darker window background (best-effort)
-        # Note: Native messageboxes may ignore these settings on some OS.
-        self.option_add("*Dialog*background", self.bg)
-        self.option_add("*Dialog*foreground", self.fg)
-        self.option_add("*Dialog*selectBackground", self.active_bg)
-        self.option_add("*Dialog*selectForeground", self.fg)
+        self._apply_theme()
 
     def _build_ui(self):
         # Main container frame
-        main = ttk.Frame(self, padding=14)
-        main.grid(row=0, column=0, sticky="nsew")
+        self.main = ttk.Frame(self, padding=14)
+        self.main.grid(row=0, column=0, sticky="nsew")
+
+        # Top bar (title + toggle)
+        top = ttk.Frame(self.main)
+        top.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+        top.columnconfigure(0, weight=1)
+
+        ttk.Label(top, text="Calculator", font=("Segoe UI", 12, "bold")).grid(
+            row=0, column=0, sticky="w"
+        )
+
+        # Theme toggle (Checkbutton)
+        self.toggle_btn = ttk.Checkbutton(
+            top, text="Dark mode", variable=self.is_dark, command=self._apply_theme
+        )
+        self.toggle_btn.grid(row=0, column=1, sticky="e")
 
         # Input fields
-        ttk.Label(main, text="A:").grid(
-            row=0, column=0, sticky="w", padx=(0, 6), pady=(0, 8)
+        ttk.Label(self.main, text="A:").grid(
+            row=1, column=0, sticky="w", padx=(0, 6), pady=(0, 8)
         )
-        a_entry = ttk.Entry(main, textvariable=self.var_a, width=18)
-        a_entry.grid(row=0, column=1, sticky="ew", pady=(0, 8))
+        self.a_entry = ttk.Entry(self.main, textvariable=self.var_a, width=18)
+        self.a_entry.grid(row=1, column=1, sticky="ew", pady=(0, 8))
 
-        ttk.Label(main, text="B:").grid(
-            row=1, column=0, sticky="w", padx=(0, 6), pady=(0, 12)
+        ttk.Label(self.main, text="B:").grid(
+            row=2, column=0, sticky="w", padx=(0, 6), pady=(0, 12)
         )
-        b_entry = ttk.Entry(main, textvariable=self.var_b, width=18)
-        b_entry.grid(row=1, column=1, sticky="ew", pady=(0, 12))
+        self.b_entry = ttk.Entry(self.main, textvariable=self.var_b, width=18)
+        self.b_entry.grid(row=2, column=1, sticky="ew", pady=(0, 12))
 
         # Operation buttons
-        btns = ttk.Frame(main)
-        btns.grid(row=2, column=0, columnspan=2, sticky="ew")
+        btns = ttk.Frame(self.main)
+        btns.grid(row=3, column=0, columnspan=2, sticky="ew")
 
         ttk.Button(btns, text="+", width=6, command=lambda: self._compute("add")).grid(
             row=0, column=0, padx=4, pady=4
@@ -136,22 +91,100 @@ class CalculatorGUI(tk.Tk):
         )
 
         # Clear button
-        ttk.Button(main, text="Clear", command=self._clear).grid(
-            row=3, column=0, columnspan=2, sticky="ew", pady=(10, 0)
+        ttk.Button(self.main, text="Clear", command=self._clear).grid(
+            row=4, column=0, columnspan=2, sticky="ew", pady=(10, 0)
         )
 
         # Result label
-        res = ttk.Label(
-            main, textvariable=self.var_result, font=("Segoe UI", 12, "bold")
-        )
-        res.grid(row=4, column=0, columnspan=2, sticky="w", pady=(12, 0))
+        ttk.Label(
+            self.main, textvariable=self.var_result, font=("Segoe UI", 12, "bold")
+        ).grid(row=5, column=0, columnspan=2, sticky="w", pady=(12, 0))
 
         # Bind Enter key to perform an operation (default: addition)
-        a_entry.bind("<Return>", lambda e: self._compute("add"))
-        b_entry.bind("<Return>", lambda e: self._compute("add"))
+        self.a_entry.bind("<Return>", lambda e: self._compute("add"))
+        self.b_entry.bind("<Return>", lambda e: self._compute("add"))
 
         # Set initial focus
-        a_entry.focus()
+        self.a_entry.focus()
+
+    def _apply_theme(self):
+        """
+        Apply light/dark theme by overriding ttk styles.
+        Note: ttk uses native rendering on some platforms; 'clam' is easier to style consistently.
+        """
+        style = ttk.Style(self)
+
+        try:
+            style.theme_use("clam")
+        except tk.TclError:
+            pass
+
+        if self.is_dark.get():
+            # --- Dark palette ---
+            bg = "#121212"
+            fg = "#EAEAEA"
+            entry_bg = "#1E1E1E"
+            entry_fg = "#FFFFFF"
+            btn_bg = "#2A2A2A"
+            btn_fg = "#FFFFFF"
+            border = "#3A3A3A"
+            active_bg = "#3B3B3B"
+            self.toggle_btn.configure(text="Dark mode")
+        else:
+            # --- Light palette ---
+            bg = "#F2F2F2"
+            fg = "#111111"
+            entry_bg = "#FFFFFF"
+            entry_fg = "#111111"
+            btn_bg = "#E6E6E6"
+            btn_fg = "#111111"
+            border = "#BDBDBD"
+            active_bg = "#D6D6D6"
+            self.toggle_btn.configure(text="Light mode")
+
+        # Root background (covers non-ttk regions)
+        self.configure(bg=bg)
+
+        # Base styles
+        style.configure(".", background=bg, foreground=fg)
+
+        style.configure("TFrame", background=bg)
+        style.configure("TLabel", background=bg, foreground=fg)
+
+        style.configure(
+            "TButton",
+            background=btn_bg,
+            foreground=btn_fg,
+            bordercolor=border,
+            focusthickness=2,
+            focuscolor=border,
+            padding=6,
+        )
+        style.map(
+            "TButton",
+            background=[("active", active_bg), ("pressed", active_bg)],
+            foreground=[("disabled", "#888888")],
+        )
+
+        style.configure(
+            "TEntry",
+            fieldbackground=entry_bg,
+            background=entry_bg,
+            foreground=entry_fg,
+            bordercolor=border,
+            insertcolor=entry_fg,
+        )
+
+        style.configure("TCheckbutton", background=bg, foreground=fg)
+        style.map(
+            "TCheckbutton", background=[("active", bg)], foreground=[("active", fg)]
+        )
+
+        # Best-effort: make dialogs less jarring (native messageboxes may ignore this)
+        self.option_add("*Dialog*background", bg)
+        self.option_add("*Dialog*foreground", fg)
+        self.option_add("*Dialog*selectBackground", active_bg)
+        self.option_add("*Dialog*selectForeground", fg)
 
     def _parse_inputs(self):
         # Read and validate inputs
