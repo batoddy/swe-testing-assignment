@@ -28,18 +28,19 @@ class CalculatorGUI(tk.Tk):
 
         self.calc = Calculator()
 
-        # --- UI değişkenleri ---
+        # --- UI variables ---
         self.var_a = tk.StringVar()
         self.var_b = tk.StringVar()
-        self.var_result = tk.StringVar(value="Sonuç: -")
+        self.var_result = tk.StringVar(value="Result: -")
 
         self._build_ui()
 
     def _build_ui(self):
+        # Main container frame
         main = ttk.Frame(self, padding=14)
         main.grid(row=0, column=0, sticky="nsew")
 
-        # Girişler
+        # Input fields
         ttk.Label(main, text="A:").grid(
             row=0, column=0, sticky="w", padx=(0, 6), pady=(0, 8)
         )
@@ -52,7 +53,7 @@ class CalculatorGUI(tk.Tk):
         b_entry = ttk.Entry(main, textvariable=self.var_b, width=18)
         b_entry.grid(row=1, column=1, sticky="ew", pady=(0, 12))
 
-        # Butonlar
+        # Operation buttons
         btns = ttk.Frame(main)
         btns.grid(row=2, column=0, columnspan=2, sticky="ew")
 
@@ -69,34 +70,37 @@ class CalculatorGUI(tk.Tk):
             row=0, column=3, padx=4, pady=4
         )
 
-        ttk.Button(main, text="Temizle", command=self._clear).grid(
+        # Clear button
+        ttk.Button(main, text="Clear", command=self._clear).grid(
             row=3, column=0, columnspan=2, sticky="ew", pady=(10, 0)
         )
 
-        # Sonuç
+        # Result label
         res = ttk.Label(
             main, textvariable=self.var_result, font=("Segoe UI", 12, "bold")
         )
         res.grid(row=4, column=0, columnspan=2, sticky="w", pady=(12, 0))
 
-        # Kullanışlı: enter basınca hesapla (örnek: toplama)
+        # Bind Enter key to perform an operation (default: addition)
         a_entry.bind("<Return>", lambda e: self._compute("add"))
         b_entry.bind("<Return>", lambda e: self._compute("add"))
 
+        # Set initial focus
         a_entry.focus()
 
     def _parse_inputs(self):
+        # Read and validate inputs
         a_text = self.var_a.get().strip()
         b_text = self.var_b.get().strip()
 
         if not a_text or not b_text:
-            raise ValueError("Lütfen A ve B için değer gir.")
+            raise ValueError("Please enter values for A and B.")
 
         try:
             a = float(a_text)
             b = float(b_text)
         except ValueError:
-            raise ValueError("A ve B sayısal olmalı. (Örn: 12, 3.5)")
+            raise ValueError("A and B must be numeric. (e.g., 12, 3.5)")
 
         return a, b
 
@@ -104,6 +108,7 @@ class CalculatorGUI(tk.Tk):
         try:
             a, b = self._parse_inputs()
 
+            # Dispatch operation
             if op == "add":
                 out = self.calc.add(a, b)
                 sym = "+"
@@ -117,18 +122,19 @@ class CalculatorGUI(tk.Tk):
                 out = self.calc.divide(a, b)
                 sym = "÷"
             else:
-                raise ValueError("Bilinmeyen işlem")
+                raise ValueError("Unknown operation")
 
-            # Sonucu biraz düzgün gösterelim
-            self.var_result.set(f"Sonuç: {a:g} {sym} {b:g} = {out:g}")
+            # Display formatted result
+            self.var_result.set(f"Result: {a:g} {sym} {b:g} = {out:g}")
 
         except Exception as ex:
-            messagebox.showerror("Hata", str(ex))
+            messagebox.showerror("Error", str(ex))
 
     def _clear(self):
+        # Reset input fields and result text
         self.var_a.set("")
         self.var_b.set("")
-        self.var_result.set("Sonuç: -")
+        self.var_result.set("Result: -")
 
 
 if __name__ == "__main__":
