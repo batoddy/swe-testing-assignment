@@ -33,7 +33,72 @@ class CalculatorGUI(tk.Tk):
         self.var_b = tk.StringVar()
         self.var_result = tk.StringVar(value="Result: -")
 
+        # Apply dark mode styling (ONLY addition requested)
+        self._apply_dark_mode()
+
         self._build_ui()
+
+    def _apply_dark_mode(self):
+        # --- Dark palette ---
+        self.bg = "#121212"
+        self.fg = "#EAEAEA"
+        self.entry_bg = "#1E1E1E"
+        self.entry_fg = "#FFFFFF"
+        self.btn_bg = "#2A2A2A"
+        self.btn_fg = "#FFFFFF"
+        self.border = "#3A3A3A"
+        self.active_bg = "#3B3B3B"
+
+        # Set root background
+        self.configure(bg=self.bg)
+
+        # ttk style overrides
+        style = ttk.Style(self)
+
+        # Pick a theme that is easy to override
+        # 'clam' works well across platforms
+        try:
+            style.theme_use("clam")
+        except tk.TclError:
+            pass
+
+        # Base styles
+        style.configure(".", background=self.bg, foreground=self.fg)
+
+        style.configure("TFrame", background=self.bg)
+
+        style.configure("TLabel", background=self.bg, foreground=self.fg)
+
+        style.configure(
+            "TButton",
+            background=self.btn_bg,
+            foreground=self.btn_fg,
+            bordercolor=self.border,
+            focusthickness=2,
+            focuscolor=self.border,
+            padding=6,
+        )
+        style.map(
+            "TButton",
+            background=[("active", self.active_bg), ("pressed", self.active_bg)],
+            foreground=[("disabled", "#888888")],
+        )
+
+        style.configure(
+            "TEntry",
+            fieldbackground=self.entry_bg,
+            background=self.entry_bg,
+            foreground=self.entry_fg,
+            bordercolor=self.border,
+            insertcolor=self.entry_fg,
+        )
+
+        # Make messageboxes less jarring by setting a darker window background (best-effort)
+        # Note: Native messageboxes may ignore these settings on some OS.
+        self.option_add("*Dialog*background", self.bg)
+        self.option_add("*Dialog*foreground", self.fg)
+        self.option_add("*Dialog*selectBackground", self.active_bg)
+        self.option_add("*Dialog*selectForeground", self.fg)
 
     def _build_ui(self):
         # Main container frame
